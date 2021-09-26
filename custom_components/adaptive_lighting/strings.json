@@ -23,6 +23,7 @@
           "lights": "lights",
           "initial_transition": "initial_transition, when lights go 'off' to 'on'",
           "sleep_transition": "sleep_transition, when 'sleep_state' changes",
+          "wakeup_transition": "wakeup_transition, the number of seconds from full dark to 'sunrise' in the morning",
           "interval": "interval, time between switch updates in seconds",
           "max_brightness": "max_brightness, in %",
           "max_color_temp": "max_color_temp, in Kelvin",

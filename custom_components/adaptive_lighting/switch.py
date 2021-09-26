@@ -100,6 +100,7 @@ from .const import (
     CONF_DETECT_NON_HA_CHANGES,
     CONF_INITIAL_TRANSITION,
     CONF_SLEEP_TRANSITION,
+    CONF_WAKEUP_TRANSITION,
     CONF_INTERVAL,
     CONF_LIGHTS,
     CONF_MANUAL_CONTROL,
@@ -589,6 +590,7 @@ class AdaptiveSwitch(SwitchEntity, RestoreEntity):
             sunset_time=data[CONF_SUNSET_TIME],
             time_zone=self.hass.config.time_zone,
             transition=data[CONF_TRANSITION],
+            wakeup_transition=data[CONF_WAKEUP_TRANSITION],
         )
 
         # Set other attributes
@@ -1053,6 +1055,7 @@ class SunLightSettings:
     sunset_time: Optional[datetime.time]
     time_zone: datetime.tzinfo
     transition: int
+    wakeup_transition: int
 
     def get_sun_events(self, date: datetime.datetime) -> Dict[str, float]:
         """Get the four sun event's timestamps at 'date'."""
@@ -1138,6 +1141,14 @@ class SunLightSettings:
         )
         k = 1 if next_event in (SUN_EVENT_SUNSET, SUN_EVENT_NOON) else -1
         percentage = (0 - k) * ((target_ts - h) / (h - x)) ** 2 + k
+
+        #AM wakeup
+        if next_event is SUN_EVENT_SUNRISE:
+            if now < (next_ts - wakeup_transition):
+                return -1
+            else:
+                return 0 - ((next_ts - now) / wakeup_transition)
+
         return percentage
 
     def calc_brightness_pct(self, percent: float, is_sleep: bool) -> float:
