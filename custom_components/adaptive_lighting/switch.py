@@ -1144,10 +1144,11 @@ class SunLightSettings:
 
         #AM wakeup
         if next_event is SUN_EVENT_SUNRISE:
-            if now < (next_ts - wakeup_transition):
-                return -1
+            now = now.timestamp()
+            if now < (next_ts - self.wakeup_transition):
+                percentage = -1
             else:
-                return 0 - ((next_ts - now) / wakeup_transition)
+                percentage = -((next_ts - now) / self.wakeup_transition)
 
         return percentage
 
