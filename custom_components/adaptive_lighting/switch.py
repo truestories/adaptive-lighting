@@ -223,9 +223,15 @@ async def handle_apply(switch: AdaptiveSwitch, service_call: ServiceCall):
     """Handle the entity service apply."""
     hass = switch.hass
     data = service_call.data
-    all_lights = _expand_light_groups(hass, data[CONF_LIGHTS])
+    all_lights = data[CONF_LIGHTS]
+    if not all_lights:
+        all_lights = switch._lights
+    all_lights = _expand_light_groups(hass, all_lights)
     switch.turn_on_off_listener.lights.update(all_lights)
-
+    _LOGGER.debug(
+        "Called 'adaptive_lighting.apply' service with '%s'",
+        data,
+    )
     for light in all_lights:
         if data[CONF_TURN_ON_LIGHTS] or is_on(hass, light):
             await switch._adapt_light(  # pylint: disable=protected-access
@@ -323,7 +329,7 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_APPLY,
         {
-            vol.Optional(CONF_LIGHTS, default=switch._lights): cv.entity_ids,  # pylint: disable=protected-access
+            vol.Optional(CONF_LIGHTS, default=[]): cv.entity_ids,  # pylint: disable=protected-access
             vol.Optional(
                 CONF_TRANSITION,
                 default=switch._initial_transition,  # pylint: disable=protected-access
@@ -699,7 +705,7 @@ class AdaptiveSwitch(SwitchEntity, RestoreEntity):
         return self._icon
 
     @property
-    def device_state_attributes(self) -> Dict[str, Any]:
+    def extra_state_attributes(self) -> Dict[str, Any]:
         """Return the attributes of the switch."""
         if not self.is_on:
             return {key: None for key in self._settings}
@@ -1069,6 +1075,18 @@ class SunLightSettings:
                 utc_time = date_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE).astimezone(dt_util.UTC)
             return utc_time
 
+        def calculate_noon_and_midnight(
+                sunset: datetime.datetime, sunrise: datetime.datetime
+        ) -> Tuple[datetime.datetime, datetime.datetime]:
+            middle = abs(sunset - sunrise) / 2
+            if sunset > sunrise:
+                noon = sunrise + middle
+                midnight = noon + timedelta(hours=12) * (1 if noon.hour < 12 else -1)
+            else:
+                midnight = sunset + middle
+                noon = midnight + timedelta(hours=12) * (1 if midnight.hour < 12 else -1)
+            return noon, midnight
+
         location = self.astral_location
 
         sunrise = (
@@ -1092,8 +1110,7 @@ class SunLightSettings:
                 solar_noon = location.noon(date, local=False)
                 solar_midnight = location.midnight(date, local=False)
         else:
-            solar_noon = sunrise + (sunset - sunrise) / 2
-            solar_midnight = sunset + ((sunrise + timedelta(days=1)) - sunset) / 2
+            (solar_noon, solar_midnight) = calculate_noon_and_midnight(sunset, sunrise)
 
         events = [
             (SUN_EVENT_SUNRISE, sunrise.timestamp()),

@@ -1,3 +1,6 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+![Version](https://img.shields.io/github/v/release/basnijholt/adaptive-lighting)
+
 # Adaptive Lighting component for Home Assistant
 
 ![](https://github.com/home-assistant/brands/raw/b4a168b9af282ef916e120d31091ecd5e3c35e66/core_integrations/adaptive_lighting/icon.png)
@@ -114,8 +117,8 @@ adaptive_lighting:
 | Service data attribute | Optional | Description                                                                                                                          |
 |------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------|
 | `entity_id`            |       no | The `entity_id` of the switch in which to (un)mark the light as being "manually controlled".                                         |
-| `lights`               |       no | A light (or list of lights) to apply the settings to.                                                                                |
-| `manual_control`       |      yes | Whether to mark (true) or unmark (false) the light as "manually controlled", when not specified it selects all lights in the switch. |
+| `lights`               |      yes | entity_id(s) of lights, if not specified, all lights in the switch are selected.                                                     |
+| `manual_control`       |      yes | Whether to add ('true') or remove ('false') the light from the 'manual_control' list, default: true                                 |
 
 
 ## Automation examples
